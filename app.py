@@ -69,7 +69,6 @@ if 'fecha_tasa_activa' not in st.session_state:
     st.session_state.fecha_tasa_activa = hoy
     st.session_state.tasa_dolar_diaria = 36.50  # Tasa inicial por defecto
 
-# Si ha cambiado el día, la tasa se congela por las próximas 24 horas del nuevo día
 if st.session_state.fecha_tasa_activa != hoy:
     st.session_state.fecha_tasa_activa = hoy
 
@@ -79,15 +78,6 @@ TASA_DOLAR = st.session_state.tasa_dolar_diaria
 st.sidebar.title("🛠️ YaracuyServicios")
 st.sidebar.markdown(f"**Fecha del Sistema:** {hoy}")
 st.sidebar.markdown(f"**Tasa del Dólar Vigente:** Bs. {TASA_DOLAR:.2f} *(Válida por 24h)*")
-
-# Panel rápido en barra lateral para que el Administrador modifique la tasa diaria
-with st.sidebar.expander("⚙️ Actualizar Tasa Diaria (Admin)"):
-    nueva_tasa = st.number_input("Nueva Tasa BCV / Paralelo", value=float(TASA_DOLAR), step=0.10)
-    if st.button("Fijar Tasa por 24 Horas"):
-        st.session_state.tasa_dolar_diaria = nueva_tasa
-        st.success(f"¡Tasa actualizada a Bs. {nueva_tasa:.2f} por las próximas 24 horas!")
-        st.rerun()
-
 st.sidebar.markdown("---")
 
 menu = st.sidebar.selectbox(
@@ -102,11 +92,27 @@ menu = st.sidebar.selectbox(
 )
 
 # ==========================================
-# MÓDULO 1: INICIO Y CATÁLOGO DE ÉXITO (Neuromarketing)
+# MÓDULO 1: INICIO Y CATÁLOGO DE ÉXITO (Neuromarketing + Logos)
 # ==========================================
 if menu == "🌟 Inicio y Catálogo de Éxito":
-    st.markdown("<h1 style='text-align: center; color: #004080;'>🏡 Tu Hogar en Yaracuy Merece Paz, Seguridad y Confianza Absoluta</h1>", unsafe_allow_html=True)
-    st.markdown("<h3 style='text-align: center; color: #555;'>No contrates solo un servicio técnico... recupera la tranquilidad de tu familia con expertos verificados y garantizados por contrato.</h3>", unsafe_allow_html=True)
+    # Layout de 3 columnas para colocar los logos a los lados y el título en el centro
+    col_logo_izq, col_titulo, col_logo_der = st.columns([1, 4, 1])
+    
+    with col_logo_izq:
+        try:
+            st.image("Logo Servihogar1.png", use_container_width=True)
+        except:
+            st.write("🛡️ [Logo 1]")
+            
+    with col_titulo:
+        st.markdown("<h1 style='text-align: center; color: #004080; font-size: 28px;'>🏡 Tu Hogar en Yaracuy Merece Paz y Confianza Absoluta</h1>", unsafe_allow_html=True)
+        st.markdown("<h3 style='text-align: center; color: #555; font-size: 16px;'>Recupera la tranquilidad con expertos verificados y garantizados por contrato.</h3>", unsafe_allow_html=True)
+        
+    with col_logo_der:
+        try:
+            st.image("Logo Servihogar2.png", use_container_width=True)
+        except:
+            st.write("⭐ [Logo 2]")
     
     st.markdown("---")
     
@@ -244,7 +250,6 @@ elif menu == "📋 Solicitar Servicio & Cotización PDF":
                 restante_bs = restante_usd * TASA_DOLAR
                 
                 st.markdown("---")
-                # Visualizador Estilo Documento / PDF Preview
                 st.markdown(f"""
                 ### 🛠️ YARACUYSERVICIOS - COTIZACIÓN Y CONTRATO OFICIAL
                 **Fecha de Emisión:** {hoy}  
@@ -258,7 +263,7 @@ elif menu == "📋 Solicitar Servicio & Cotización PDF":
                 * **Inicial Requerida (50% para inicio):** ${inicial_usd:.2f} (Bs. {inicial_bs:.2f})
                 * **Pago Final (50% al culminar):** ${restante_usd:.2f} (Bs. {restante_bs:.2f})
                 
-                #### 🔒 DATOS ÚNICOS PARA PAGO MóVIL (ADMINISTRADOR):
+                #### 🔒 DATOS ÚNICOS PARA PAGO MÓVIL (ADMINISTRADOR):
                 * **Banco:** {ADMIN_PAGO_MOVIL['banco']}
                 * **Teléfono:** {ADMIN_PAGO_MOVIL['telefono']}
                 * **Cédula:** {ADMIN_PAGO_MOVIL['cedula']} ({ADMIN_PAGO_MOVIL['beneficiario']})
@@ -267,7 +272,6 @@ elif menu == "📋 Solicitar Servicio & Cotización PDF":
                 ------------------------------------------------------------
                 """)
                 
-                # Texto plano descargable como comprobante o cotización
                 texto_cotizacion = f"""YARACUYSERVICIOS - COTIZACION OFICIAL
 Fecha: {hoy} | Tasa: {TASA_DOLAR}
 Cliente: {cot_cliente}
@@ -285,19 +289,30 @@ Pago Movil: {ADMIN_PAGO_MOVIL['telefono']} - {ADMIN_PAGO_MOVIL['cedula']} ({ADMI
                 )
 
 # ==========================================
-# MÓDULO 4: PANEL DE ADJUDICACIÓN (ADMIN)
+# MÓDULO 4: PANEL DE ADJUDICACIÓN & TASA PROTEGIDA (ADMIN)
 # ==========================================
 elif menu == "🔒 Panel de Adjudicación (Administrador)":
     st.title("🔒 Panel de Control del Administrador")
-    st.markdown("Área exclusiva para la gerencia. Aquí se adjudican los contratos bajo responsabilidad y estándares de calidad.")
+    st.markdown("Área exclusiva para la gerencia. Aquí se adjudican los contratos y se controla de forma segura la tasa cambiaria diaria.")
     
     admin_clave = st.text_input("Clave de Acceso Administrador", type="password")
     
     if admin_clave == "admin1234":
         st.success("Acceso Autorizado como Administrador.")
         
+        st.markdown("---")
+        st.subheader("⚙️ Módulo Protegido: Actualización de Tasa Diaria (24 Horas)")
+        st.markdown(f"Tasa actual en sistema: **Bs. {TASA_DOLAR:.2f}**")
+        
+        nueva_tasa = st.number_input("Ingresar Nueva Tasa BCV / Paralelo", value=float(TASA_DOLAR), step=0.10)
+        if st.button("Fijar Tasa por 24 Horas (Seguro Admin)"):
+            st.session_state.tasa_dolar_diaria = nueva_tasa
+            st.success(f"¡Tasa actualizada correctamente a Bs. {nueva_tasa:.2f} por las próximas 24 horas!")
+            st.rerun()
+            
+        st.markdown("---")
+        st.subheader("📋 Listado de Solicitudes y Adjudicación de Contratos")
         if st.session_state.solicitudes:
-            st.subheader("Listado de Solicitudes y Adjudicación de Contratos")
             for idx, sol in enumerate(st.session_state.solicitudes):
                 with st.expander(f"Solicitud #{sol['id']} - Cliente: {sol['cliente']} ({sol['municipio']})"):
                     st.write(f"**Servicio:** {sol['servicio']}")
@@ -308,10 +323,11 @@ elif menu == "🔒 Panel de Adjudicación (Administrador)":
                     if st.button(f"Guardar Estado #{sol['id']}", key=f"btn_est_{idx}"):
                         sol['estado'] = nuevo_estado
                         st.success("¡Estado de contrato actualizado correctamente!")
+        else:
+            st.info("No hay solicitudes pendientes.")
         
         st.markdown("---")
-        st.subheader("Cálculo y Liquidación de Pagos a Técnicos")
-        st.markdown(f"Tasa del día activa: **Bs. {TASA_DOLAR:.2f}**. El administrador retiene el **10%** y liquida el **90%** al técnico.")
+        st.subheader("💰 Cálculo y Liquidación de Pagos a Técnicos")
         monto_contrato = st.number_input("Monto Total del Contrato en USD ($)", min_value=10.0, value=50.0)
         comision_admin = monto_contrato * 0.10
         pago_tecnico = monto_contrato * 0.90
