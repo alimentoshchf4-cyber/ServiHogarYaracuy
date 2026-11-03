@@ -151,6 +151,23 @@ elif menu == "👤 Registro de Técnicos (Perfiles)":
     st.title("👷 Registro y Perfil Profesional del Técnico")
     st.markdown("Al registrarte, aceptas cumplir estrictamente con los **estándares de calidad, rapidez y seguridad** bajo contrato con la administración.")
     
+    lista_oficios = [
+        "Plomería y Destape de Cañerías",
+        "Electricidad Básica y Residencial",
+        "Albañilería Básica y Reparaciones",
+        "Empotrado de Cocina y carpintería",
+        "Averías Generales y Filtraciones",
+        "Impermeabilización y Techos",
+        "Limpieza Profunda de Patios y Áreas Verdes",
+        "Mantenimiento y Tratamiento de Piscinas",
+        "Pintura Residencial e Industrial",
+        "Instalación de Aires Acondicionados (Split)",
+        "Herrería y Soldadura Menor",
+        "Instalación de Sistemas hidroneumáticos y Bombas",
+        "Gas doméstico y tuberías",
+        "Línea Blanca (Lavadoras, Secadoras, Cocinas)"
+    ]
+    
     with st.form("form_registro_tecnico"):
         col1, col2 = st.columns(2)
         with col1:
@@ -158,7 +175,7 @@ elif menu == "👤 Registro de Técnicos (Perfiles)":
             cedula = st.text_input("Cédula de Identidad (Ej. V-20123456)")
             telefono = st.text_input("Número de Teléfono Personal")
         with col2:
-            oficio = st.selectbox("Especialidad principal", ["Electricista", "Plomero", "Técnico de Aires Acondicionados", "Albañil", "Línea Blanca"])
+            oficio = st.selectbox("Especialidad principal", lista_oficios)
             direccion = st.text_input("Municipio / Dirección de Residencia")
             
         experiencia = st.text_area("Experiencia Profesional y Certificaciones")
@@ -192,26 +209,48 @@ elif menu == "📋 Solicitar Servicio & Cotización PDF":
     
     tab1, tab2, tab3 = st.tabs(["📝 Publicar Necesidad", "👥 Elegir Perfil Profesional", "📄 Generar Cotización Formato PDF"])
     
+    # Catálogo desplegable con amplia variedad de servicios del hogar
+    lista_servicios_hogar = [
+        "💧 Plomería y Destape de Cañerías",
+        "⚡ Electricidad Básica y Residencial",
+        "🧱 Albañilería Básica y Reparaciones Menores",
+        "🍳 Empotrado de Cocina y Muebles",
+        "🛠️ Averías Generales y Filtraciones",
+        "🏠 Impermeabilización de Techos y losas",
+        "🌿 Limpieza Profunda de Patios y Desmalezado",
+        "🏊 Mantenimiento y Limpieza de Piscinas",
+        "🎨 Pintura Residencial (Interiores y Exteriores)",
+        "❄️ Instalación y Mantenimiento de Aires Acondicionados",
+        "🚪 Herrería, Portones y Soldadura Menor",
+        "⚙️ Bombas de Agua e Hidroneumáticos",
+        "🔌 Reparación de Línea Blanca (Neveras, Lavadoras)",
+        "🧹 Limpieza General Profunda Post-Remodelación"
+    ]
+    
     with tab1:
         with st.form("form_solicitud_cliente"):
             c_nombre = st.text_input("Tu Nombre y Apellido")
             c_telefono = st.text_input("Tu Teléfono de Contacto")
             c_muni = st.selectbox("Municipio", ["San Felipe", "Independencia", "Cocorote", "Yaritagua", "Nirgua"])
-            c_desc = st.text_area("Detalla la falla o servicio requerido en el hogar")
+            
+            # Lista desplegable de servicios exactos
+            servicio_seleccionado = st.selectbox("Seleccione el Tipo de Servicio Necesitado", lista_servicios_hogar)
+            
+            c_desc = st.text_area("Detalles adicionales de la falla o requerimiento en el hogar")
             
             btn_enviar_sol = st.form_submit_button("Registrar Solicitud en el Sistema")
             if btn_enviar_sol:
-                if c_nombre and c_telefono and c_desc:
+                if c_nombre and c_telefono:
                     nueva_sol = {
                         "id": len(st.session_state.solicitudes) + 1,
                         "cliente": c_nombre,
                         "telefono": c_telefono,
                         "municipio": c_muni,
-                        "servicio": c_desc,
+                        "servicio": f"{servicio_seleccionado} - {c_desc}",
                         "estado": "Pendiente de Adjudicación por Admin"
                     }
                     st.session_state.solicitudes.append(nueva_sol)
-                    st.success("¡Solicitud registrada! El Administrador la revisará.")
+                    st.success("¡Solicitud registrada con éxito! El Administrador la revisará.")
                 else:
                     st.error("Por favor completa los campos requeridos.")
                     
@@ -241,7 +280,7 @@ elif menu == "📋 Solicitar Servicio & Cotización PDF":
         
         with st.form("form_cotizacion"):
             cot_cliente = st.text_input("Nombre del Cliente Solicitante", value="María Pérez")
-            cot_servicio = st.text_input("Descripción breve del servicio", value="Mantenimiento y revisión general")
+            cot_servicio_pdf = st.selectbox("Seleccionar Servicio para la Cotización", lista_servicios_hogar)
             cot_monto_usd = st.number_input("Monto Total Estimado del Servicio (USD)", min_value=10.0, value=40.0, step=5.0)
             
             btn_generar_cot = st.form_submit_button("Generar Documento de Cotización")
@@ -260,7 +299,7 @@ elif menu == "📋 Solicitar Servicio & Cotización PDF":
                 **Tasa BCV Aplicada (Fija 24h):** Bs. {TASA_DOLAR:.2f} per USD  
                 ------------------------------------------------------------  
                 **Cliente:** {cot_cliente}  
-                **Servicio Solicitado:** {cot_servicio}  
+                **Servicio Seleccionado:** {cot_servicio_pdf}  
                 ------------------------------------------------------------  
                 #### 💰 DESGLOSE FINANCIERO:
                 * **Monto Total del Contrato:** ${cot_monto_usd:.2f} (Bs. {monto_bs_total:.2f})
@@ -279,7 +318,7 @@ elif menu == "📋 Solicitar Servicio & Cotización PDF":
                 texto_cotizacion = f"""YARACUYSERVICIOS - COTIZACION OFICIAL
 Fecha: {hoy} | Tasa: {TASA_DOLAR}
 Cliente: {cot_cliente}
-Servicio: {cot_servicio}
+Servicio: {cot_servicio_pdf}
 Total: ${cot_monto_usd} (Bs. {monto_bs_total})
 Inicial 50%: ${inicial_usd} (Bs. {inicial_bs})
 Pago Final 50%: ${restante_usd} (Bs. {restante_bs})
@@ -380,9 +419,8 @@ elif menu == "💳 Pasarela de Pago & Contrato (50% / 50%)":
         if ref_pago:
             st.success("¡Pago reportado con éxito! El administrador verificará la referencia.")
             
-            # Si el cliente paga la segunda etapa (completando el 100% del servicio)
             if "2." in tipo_pago_etapa or "100%" in tipo_pago_etapa:
-                st.balloons()  # Animación de celebración instantánea
+                st.balloons()
                 st.markdown("""
                 <div style="background-color: #d4edda; padding: 20px; border-radius: 10px; border: 1px solid #c3e6cb; color: #155724; text-align: center;">
                     <h2>🎉 ¡Muchísimas Gracias por Preferirnos! 🎉</h2>
