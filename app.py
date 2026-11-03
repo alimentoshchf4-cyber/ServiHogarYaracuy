@@ -61,20 +61,33 @@ def generar_link_whatsapp(mensaje):
     return f"https://wa.me/{WHATSAPP_ADMIN}?text={urllib.parse.quote(mensaje)}"
 
 # ---------------------------------------------------------
-# TASA DE CAMBIO FIJA POR 24 HORAS
+# TASA DE CAMBIO DIARIA (ACTUALIZABLE CADA 24 HORAS)
 # ---------------------------------------------------------
-if 'tasa_dolar_cache' not in st.session_state or 'fecha_tasa' not in st.session_state:
-    st.session_state.fecha_tasa = datetime.now().date()
-    st.session_state.tasa_dolar_cache = 36.50  # Tasa de referencia oficial
+hoy = datetime.now().date()
 
-if datetime.now().date() > st.session_state.fecha_tasa:
-    st.session_state.fecha_tasa = datetime.now().date()
+if 'fecha_tasa_activa' not in st.session_state:
+    st.session_state.fecha_tasa_activa = hoy
+    st.session_state.tasa_dolar_diaria = 36.50  # Tasa inicial por defecto
 
-TASA_DOLAR = st.session_state.tasa_dolar_cache
+# Si ha cambiado el día, la tasa se congela por las próximas 24 horas del nuevo día
+if st.session_state.fecha_tasa_activa != hoy:
+    st.session_state.fecha_tasa_activa = hoy
+
+TASA_DOLAR = st.session_state.tasa_dolar_diaria
 
 # Barra Lateral de Navegación
 st.sidebar.title("🛠️ YaracuyServicios")
-st.sidebar.markdown(f"**Tasa del Dólar Vigente:** Bs. {TASA_DOLAR} *(Fija por 24h)*")
+st.sidebar.markdown(f"**Fecha del Sistema:** {hoy}")
+st.sidebar.markdown(f"**Tasa del Dólar Vigente:** Bs. {TASA_DOLAR:.2f} *(Válida por 24h)*")
+
+# Panel rápido en barra lateral para que el Administrador modifique la tasa diaria
+with st.sidebar.expander("⚙️ Actualizar Tasa Diaria (Admin)"):
+    nueva_tasa = st.number_input("Nueva Tasa BCV / Paralelo", value=float(TASA_DOLAR), step=0.10)
+    if st.button("Fijar Tasa por 24 Horas"):
+        st.session_state.tasa_dolar_diaria = nueva_tasa
+        st.success(f"¡Tasa actualizada a Bs. {nueva_tasa:.2f} por las próximas 24 horas!")
+        st.rerun()
+
 st.sidebar.markdown("---")
 
 menu = st.sidebar.selectbox(
@@ -82,7 +95,7 @@ menu = st.sidebar.selectbox(
     [
         "🌟 Inicio y Catálogo de Éxito", 
         "👤 Registro de Técnicos (Perfiles)", 
-        "📋 Solicitar Servicio (Cliente)", 
+        "📋 Solicitar Servicio & Cotización PDF", 
         "🔒 Panel de Adjudicación (Administrador)",
         "💳 Pasarela de Pago & Contrato (50% / 50%)"
     ]
@@ -97,7 +110,6 @@ if menu == "🌟 Inicio y Catálogo de Éxito":
     
     st.markdown("---")
     
-    # 🛡️ Logos y Gatillos Mentales
     col_l1, col_l2, col_l3, col_l4 = st.columns(4)
     with col_l1:
         st.markdown("<div style='text-align: center;'><h2>🛡️</h2><h4>100% Verificados</h4><p style='font-size:12px; color:gray;'>Cédula y antecedentes comprobados.</p></div>", unsafe_allow_html=True)
@@ -162,13 +174,13 @@ elif menu == "👤 Registro de Técnicos (Perfiles)":
                 st.warning("Debes completar los campos obligatorios y aceptar el contrato de calidad.")
 
 # ==========================================
-# MÓDULO 3: SOLICITUD DE SERVICIO (CLIENTE)
+# MÓDULO 3: SOLICITUD DE SERVICIO & COTIZACIÓN PDF
 # ==========================================
-elif menu == "📋 Solicitar Servicio (Cliente)":
-    st.title("📋 Módulo de Solicitud de Servicios Domésticos")
-    st.warning("🔒 **Aviso de Privacidad y Seguridad:** La clienta NO tiene acceso telefónico ni directo al técnico. La selección se realiza basándose exclusivamente en la ficha y experiencia profesional, y es el Administrador quien adjudica formalmente el servicio.")
+elif menu == "📋 Solicitar Servicio & Cotización PDF":
+    st.title("📋 Módulo de Solicitud y Cotización de Servicios")
+    st.warning("🔒 **Aviso de Seguridad:** La clienta NO tiene acceso telefónico directo al técnico. La selección se realiza por perfil profesional, y el Administrador adjudica y genera la cotización/contrato oficial.")
     
-    tab1, tab2 = st.tabs(["📝 Publicar Necesidad", "👥 Elegir Perfil de Técnico (Ciego a Contacto)"])
+    tab1, tab2, tab3 = st.tabs(["📝 Publicar Necesidad", "👥 Elegir Perfil Profesional", "📄 Generar Cotización Formato PDF"])
     
     with tab1:
         with st.form("form_solicitud_cliente"):
@@ -189,14 +201,12 @@ elif menu == "📋 Solicitar Servicio (Cliente)":
                         "estado": "Pendiente de Adjudicación por Admin"
                     }
                     st.session_state.solicitudes.append(nueva_sol)
-                    st.success("¡Solicitud registrada! El Administrador la revisará y asignará el contrato.")
+                    st.success("¡Solicitud registrada! El Administrador la revisará.")
                 else:
                     st.error("Por favor completa los campos requeridos.")
                     
     with tab2:
         st.subheader("Directorio de Expertos (Evaluación por Experiencia y Perfil)")
-        st.markdown("Selecciona el perfil de tu preferencia. **No se mostrarán teléfonos ni medios de contacto directo.**")
-        
         if st.session_state.tecnicos:
             for i, tec in enumerate(st.session_state.tecnicos):
                 with st.container():
@@ -207,11 +217,72 @@ elif menu == "📋 Solicitar Servicio (Cliente)":
                         st.markdown(f"### {tec['nombre']} - *{tec['oficio']}*")
                         st.write(f"🆔 **Cédula Verificada:** {tec['cedula']} | 📍 **Municipio:** {tec['direccion']}")
                         st.write(f"💼 **Experiencia:** {tec['experiencia']}")
-                        st.write("🔒 *Contacto directo bloqueado por seguridad.*")
                         
-                        if st.button(f"Seleccionar este Perfil", key=f"sel_{i}"):
-                            st.success(f"¡Has seleccionado a {tec['nombre']}! Comunícate con el Administrador o ve al módulo de pago para formalizar la adjudicación del contrato.")
+                        if st.button(f"Seleccionar Perfil de {tec['nombre']}", key=f"sel_{i}"):
+                            st.session_state.tecnico_seleccionado_cot = tec['nombre']
+                            st.success(f"¡Has seleccionado a {tec['nombre']}! Ya puedes generar tu cotización formal.")
                 st.markdown("---")
+        else:
+            st.info("No hay técnicos disponibles en este momento.")
+
+    with tab3:
+        st.subheader("📄 Generador de Cotización y Contrato de Servicio")
+        st.markdown("Genera el documento oficial detallado con la tasa del día, desglose 50/50 y condiciones de garantía.")
+        
+        with st.form("form_cotizacion"):
+            cot_cliente = st.text_input("Nombre del Cliente Solicitante", value="María Pérez")
+            cot_servicio = st.text_input("Descripción breve del servicio", value="Mantenimiento y revisión general")
+            cot_monto_usd = st.number_input("Monto Total Estimado del Servicio (USD)", min_value=10.0, value=40.0, step=5.0)
+            
+            btn_generar_cot = st.form_submit_button("Generar Documento de Cotización")
+            
+            if btn_generar_cot:
+                monto_bs_total = cot_monto_usd * TASA_DOLAR
+                inicial_usd = cot_monto_usd * 0.50
+                inicial_bs = inicial_usd * TASA_DOLAR
+                restante_usd = cot_monto_usd * 0.50
+                restante_bs = restante_usd * TASA_DOLAR
+                
+                st.markdown("---")
+                # Visualizador Estilo Documento / PDF Preview
+                st.markdown(f"""
+                ### 🛠️ YARACUYSERVICIOS - COTIZACIÓN Y CONTRATO OFICIAL
+                **Fecha de Emisión:** {hoy}  
+                **Tasa BCV Aplicada (Fija 24h):** Bs. {TASA_DOLAR:.2f} per USD  
+                ------------------------------------------------------------  
+                **Cliente:** {cot_cliente}  
+                **Servicio Solicitado:** {cot_servicio}  
+                ------------------------------------------------------------  
+                #### 💰 DESGLOSE FINANCIERO:
+                * **Monto Total del Contrato:** ${cot_monto_usd:.2f} (Bs. {monto_bs_total:.2f})
+                * **Inicial Requerida (50% para inicio):** ${inicial_usd:.2f} (Bs. {inicial_bs:.2f})
+                * **Pago Final (50% al culminar):** ${restante_usd:.2f} (Bs. {restante_bs:.2f})
+                
+                #### 🔒 DATOS ÚNICOS PARA PAGO MóVIL (ADMINISTRADOR):
+                * **Banco:** {ADMIN_PAGO_MOVIL['banco']}
+                * **Teléfono:** {ADMIN_PAGO_MOVIL['telefono']}
+                * **Cédula:** {ADMIN_PAGO_MOVIL['cedula']} ({ADMIN_PAGO_MOVIL['beneficiario']})
+                
+                > **Cláusula de Garantía y Calidad:** Al realizar el pago del 50% inicial a las cuentas del administrador, se activa la póliza de cumplimiento, rapidez y seguridad técnica bajo supervisión de YaracuyServicios.
+                ------------------------------------------------------------
+                """)
+                
+                # Texto plano descargable como comprobante o cotización
+                texto_cotizacion = f"""YARACUYSERVICIOS - COTIZACION OFICIAL
+Fecha: {hoy} | Tasa: {TASA_DOLAR}
+Cliente: {cot_cliente}
+Servicio: {cot_servicio}
+Total: ${cot_monto_usd} (Bs. {monto_bs_total})
+Inicial 50%: ${inicial_usd} (Bs. {inicial_bs})
+Pago Final 50%: ${restante_usd} (Bs. {restante_bs})
+Pago Movil: {ADMIN_PAGO_MOVIL['telefono']} - {ADMIN_PAGO_MOVIL['cedula']} ({ADMIN_PAGO_MOVIL['banco']})
+"""
+                st.download_button(
+                    label="📥 Descargar Cotización en TXT / Formato Digital",
+                    data=texto_cotizacion,
+                    file_name=f"Cotizacion_YaracuyServicios_{cot_cliente.replace(' ', '_')}.txt",
+                    mime="text/plain"
+                )
 
 # ==========================================
 # MÓDULO 4: PANEL DE ADJUDICACIÓN (ADMIN)
@@ -240,12 +311,12 @@ elif menu == "🔒 Panel de Adjudicación (Administrador)":
         
         st.markdown("---")
         st.subheader("Cálculo y Liquidación de Pagos a Técnicos")
-        st.markdown("El administrador retiene el **10%** por gestión de plataforma y liquida el **90%** restante al técnico ejecutor.")
+        st.markdown(f"Tasa del día activa: **Bs. {TASA_DOLAR:.2f}**. El administrador retiene el **10%** y liquida el **90%** al técnico.")
         monto_contrato = st.number_input("Monto Total del Contrato en USD ($)", min_value=10.0, value=50.0)
         comision_admin = monto_contrato * 0.10
         pago_tecnico = monto_contrato * 0.90
-        st.write(f"🔹 **Retención plataforma (10%):** ${comision_admin:.2f}")
-        st.write(f"🔹 **Monto a liquidar al técnico ejecutor (90%):** ${pago_tecnico:.2f}")
+        st.write(f"🔹 **Retención plataforma (10%):** ${comision_admin:.2f} (Bs. {comision_admin * TASA_DOLAR:.2f})")
+        st.write(f"🔹 **Monto a liquidar al técnico (90%):** ${pago_tecnico:.2f} (Bs. {pago_tecnico * TASA_DOLAR:.2f})")
         
     elif admin_clave != "":
         st.error("Clave de administrador incorrecta.")
@@ -257,14 +328,13 @@ elif menu == "💳 Pasarela de Pago & Contrato (50% / 50%)":
     st.title("💳 Pasarela de Pagos Centralizada (Esquema 50% / 50%)")
     st.markdown("Todo pago se realiza **únicamente** a través de las cuentas oficiales del Administrador.")
     
-    # Datos Únicos de Pago Móvil del Admin
     st.info(f"""
     **DATOS OFICIALES ÚNICOS PARA PAGO MÓVIL:**
     * **Banco:** {ADMIN_PAGO_MOVIL['banco']}
     * **Teléfono:** {ADMIN_PAGO_MOVIL['telefono']}
     * **Cédula:** {ADMIN_PAGO_MOVIL['cedula']}
     * **Beneficiario:** {ADMIN_PAGO_MOVIL['beneficiario']}
-    * **Tasa del Dólar Actual:** Bs. {TASA_DOLAR} *(Fija por 24 horas)*
+    * **Tasa del Dólar Actual (Fija 24h):** Bs. {TASA_DOLAR:.2f}
     """)
     
     tipo_pago_etapa = st.selectbox("Seleccione Etapa del Contrato", ["1. Pago Inicial (50%)", "2. Pago Final / Culminación (50%)"])
@@ -274,13 +344,13 @@ elif menu == "💳 Pasarela de Pago & Contrato (50% / 50%)":
     monto_bs = monto_ref * TASA_DOLAR
     
     if "Pago Móvil" in metodo:
-        st.warning(f"Equivalente exacto a pagar en Bolívares según tasa del día: **Bs. {monto_bs:.2f}**")
+        st.warning(f"Equivalente exacto a pagar en Bolívares según tasa del día (Bs. {TASA_DOLAR:.2f}): **Bs. {monto_bs:.2f}**")
         
     ref_pago = st.text_input("Número de Referencia de la Transferencia / Pago Móvil")
     
     if st.button("Reportar Transacción al Administrador"):
         if ref_pago:
-            st.success("¡Pago reportado con éxito! El administrador verificará la transacción para validar el contrato.")
+            st.success("¡Pago reportado con éxito! El administrador verificará la referencia.")
             
             msg_pago = f"Hola Carlos Pacheco, reporto pago de {tipo_pago_etapa} por ${monto_ref} ({metodo}). Ref: {ref_pago}. Tasa aplicada: {TASA_DOLAR}."
             st.markdown(f'<a href="{generar_link_whatsapp(msg_pago)}" target="_blank"><button style="background-color:#25D366; color:white; padding:10px 20px; border:none; border-radius:5px; font-weight:bold; cursor:pointer;">📱 Notificar Comprobante al Administrador por WhatsApp</button></a>', unsafe_allow_html=True)
