@@ -1,8 +1,7 @@
 import streamlit as st
 import pandas as pd
-from datetime import datetime, timedelta
+from datetime import datetime
 import urllib.parse
-from database import inicializar_base_datos
 
 # Configuración inicial de la página
 st.set_page_config(
@@ -11,8 +10,42 @@ st.set_page_config(
     layout="wide"
 )
 
-# Inicializar datos globales
-inicializar_base_datos()
+# Inicialización de Estados Globales
+if 'tecnicos' not in st.session_state:
+    st.session_state.tecnicos = [
+        {
+            "nombre": "Carlos Mendoza",
+            "oficio": "Técnico en Refrigeración y Aire Acondicionado",
+            "cedula": "V-18.456.789",
+            "telefono": "04120582064",
+            "direccion": "Avenida Cedeño, San Felipe, Yaracuy",
+            "experiencia": "6 años de experiencia instalando y reparando aires split.",
+            "estado": "Disponible",
+            "foto": "https://api.iconify.design/fluent-emoji-flat:man-mechanic.svg"
+        }
+    ]
+
+if 'solicitudes' not in st.session_state:
+    st.session_state.solicitudes = [
+        {
+            "id": 1,
+            "cliente": "Luisa Martínez",
+            "telefono": "04129998877",
+            "municipio": "San Felipe",
+            "servicio": "Mantenimiento preventivo de aire acondicionado",
+            "estado": "Abierta"
+        }
+    ]
+
+if 'catalogo_exito' not in st.session_state:
+    st.session_state.catalogo_exito = [
+        {
+            "cliente": "Pedro Alastre",
+            "municipio": "Independencia",
+            "comentario": "Excelente servicio de electricidad. El técnico llegó puntual y solucionó el cortocircuito rápido.",
+            "estrellas": "⭐⭐⭐⭐⭐"
+        }
+    ]
 
 # Datos Únicos de Pago del Administrador
 ADMIN_PAGO_MOVIL = {
@@ -28,16 +61,14 @@ def generar_link_whatsapp(mensaje):
     return f"https://wa.me/{WHATSAPP_ADMIN}?text={urllib.parse.quote(mensaje)}"
 
 # ---------------------------------------------------------
-# SISTEMA DE TASA DE CAMBIO FIJA POR 24 HORAS
+# TASA DE CAMBIO FIJA POR 24 HORAS
 # ---------------------------------------------------------
 if 'tasa_dolar_cache' not in st.session_state or 'fecha_tasa' not in st.session_state:
     st.session_state.fecha_tasa = datetime.now().date()
-    st.session_state.tasa_dolar_cache = 36.50  # Tasa de referencia inicial configurable
+    st.session_state.tasa_dolar_cache = 36.50  # Tasa de referencia oficial
 
-# Si pasaron más de 24 horas (cambio de día), se fija por otras 24h
 if datetime.now().date() > st.session_state.fecha_tasa:
     st.session_state.fecha_tasa = datetime.now().date()
-    # Aquí se mantendría estática para asegurar consistencia contable en el día
 
 TASA_DOLAR = st.session_state.tasa_dolar_cache
 
@@ -58,33 +89,45 @@ menu = st.sidebar.selectbox(
 )
 
 # ==========================================
-# MÓDULO 1: INICIO Y CATÁLOGO DE ÉXITO
+# MÓDULO 1: INICIO Y CATÁLOGO DE ÉXITO (Neuromarketing)
 # ==========================================
 if menu == "🌟 Inicio y Catálogo de Éxito":
-    st.title("🌟 YaracuyServicios: Plataforma Digital Certificada")
-    st.markdown("Modelo seguro de intermediación y control de calidad para el Estado Yaracuy.")
+    st.markdown("<h1 style='text-align: center; color: #004080;'>🏡 Tu Hogar en Yaracuy Merece Paz, Seguridad y Confianza Absoluta</h1>", unsafe_allow_html=True)
+    st.markdown("<h3 style='text-align: center; color: #555;'>No contrates solo un servicio técnico... recupera la tranquilidad de tu familia con expertos verificados y garantizados por contrato.</h3>", unsafe_allow_html=True)
     
+    st.markdown("---")
+    
+    # 🛡️ Logos y Gatillos Mentales
+    col_l1, col_l2, col_l3, col_l4 = st.columns(4)
+    with col_l1:
+        st.markdown("<div style='text-align: center;'><h2>🛡️</h2><h4>100% Verificados</h4><p style='font-size:12px; color:gray;'>Cédula y antecedentes comprobados.</p></div>", unsafe_allow_html=True)
+    with col_l2:
+        st.markdown("<div style='text-align: center;'><h2>🤝</h2><h4>Contrato y Garantía</h4><p style='font-size:12px; color:gray;'>Respaldo legal y seguridad total.</p></div>", unsafe_allow_html=True)
+    with col_l3:
+        st.markdown("<div style='text-align: center;'><h2>⚡</h2><h4>Rapidez y Eficiencia</h4><p style='font-size:12px; color:gray;'>Soluciones puntuales sin demoras.</p></div>", unsafe_allow_html=True)
+    with col_l4:
+        st.markdown("<div style='text-align: center;'><h2>🔒</h2><h4>Pago Protegido</h4><p style='font-size:12px; color:gray;'>Esquema seguro 50/50 centralizado.</p></div>", unsafe_allow_html=True)
+
+    st.markdown("---")
     st.image("https://images.unsplash.com/photo-1581578731548-c64695cc6952?q=80&w=1200&auto=format&fit=crop", use_container_width=True)
     
     st.markdown("---")
-    st.header("🏆 Trabajos Garantizados y Clientes Satisfechos")
+    st.header("🏆 Trabajos Garantizados y Clientes Satisfechos en Yaracuy")
     
-    if 'catalogo_exito' in st.session_state and st.session_state.catalogo_exito:
+    if st.session_state.catalogo_exito:
         for item in st.session_state.catalogo_exito:
             st.info(f"""
             **Cliente:** {item['cliente']} ({item['municipio']})  
             **Servicio:** {item['comentario']}  
             **Calificación:** {item['estrellas']}
             """)
-    else:
-        st.write("Aún no hay registros en el catálogo. ¡Completa servicios con éxito para destacarlos aquí!")
 
 # ==========================================
 # MÓDULO 2: REGISTRO DE TÉCNICOS
 # ==========================================
 elif menu == "👤 Registro de Técnicos (Perfiles)":
     st.title("👷 Registro y Perfil Profesional del Técnico")
-    st.markdown("Al registrarte, aceptas cumplir estrictamente con los **estándares de calidad, rapidez y seguridad** establecidos en el contrato de la plataforma.")
+    st.markdown("Al registrarte, aceptas cumplir estrictamente con los **estándares de calidad, rapidez y seguridad** bajo contrato con la administración.")
     
     with st.form("form_registro_tecnico"):
         col1, col2 = st.columns(2)
@@ -113,19 +156,17 @@ elif menu == "👤 Registro de Técnicos (Perfiles)":
                     "estado": "Disponible",
                     "foto": "https://api.iconify.design/fluent-emoji-flat:technologist.svg"
                 }
-                if 'tecnicos' not in st.session_state:
-                    st.session_state.tecnicos = []
                 st.session_state.tecnicos.append(nuevo_tecnico)
                 st.success("¡Perfil registrado con éxito! El administrador evaluará tus credenciales.")
             else:
-                st.warning("Debes completar los datos obligatorios y aceptar el contrato de calidad.")
+                st.warning("Debes completar los campos obligatorios y aceptar el contrato de calidad.")
 
 # ==========================================
 # MÓDULO 3: SOLICITUD DE SERVICIO (CLIENTE)
 # ==========================================
 elif menu == "📋 Solicitar Servicio (Cliente)":
     st.title("📋 Módulo de Solicitud de Servicios Domésticos")
-    st.markdown("Selecciona de manera interactiva el perfil técnico que prefieras basándote en su experiencia y reputación. **Nota de Privacidad:** No tendrás acceso telefónico ni de mensajería directa con el técnico; el Administrador gestionará la contratación y garantía.")
+    st.warning("🔒 **Aviso de Privacidad y Seguridad:** La clienta NO tiene acceso telefónico ni directo al técnico. La selección se realiza basándose exclusivamente en la ficha y experiencia profesional, y es el Administrador quien adjudica formalmente el servicio.")
     
     tab1, tab2 = st.tabs(["📝 Publicar Necesidad", "👥 Elegir Perfil de Técnico (Ciego a Contacto)"])
     
@@ -139,15 +180,12 @@ elif menu == "📋 Solicitar Servicio (Cliente)":
             btn_enviar_sol = st.form_submit_button("Registrar Solicitud en el Sistema")
             if btn_enviar_sol:
                 if c_nombre and c_telefono and c_desc:
-                    if 'solicitudes' not in st.session_state:
-                        st.session_state.solicitudes = []
                     nueva_sol = {
                         "id": len(st.session_state.solicitudes) + 1,
                         "cliente": c_nombre,
                         "telefono": c_telefono,
                         "municipio": c_muni,
                         "servicio": c_desc,
-                        "tecnico_seleccionado": None,
                         "estado": "Pendiente de Adjudicación por Admin"
                     }
                     st.session_state.solicitudes.append(nueva_sol)
@@ -156,10 +194,10 @@ elif menu == "📋 Solicitar Servicio (Cliente)":
                     st.error("Por favor completa los campos requeridos.")
                     
     with tab2:
-        st.subheader("Directorio de Expertos (Evaluación por Experiencia y Precio)")
-        st.markdown("Revisa las credenciales de los profesionales disponibles y selecciona al de tu preferencia. La contratación final pasa por validación del administrador.")
+        st.subheader("Directorio de Expertos (Evaluación por Experiencia y Perfil)")
+        st.markdown("Selecciona el perfil de tu preferencia. **No se mostrarán teléfonos ni medios de contacto directo.**")
         
-        if 'tecnicos' in st.session_state and st.session_state.tecnicos:
+        if st.session_state.tecnicos:
             for i, tec in enumerate(st.session_state.tecnicos):
                 with st.container():
                     col1, col2 = st.columns([1, 4])
@@ -169,28 +207,25 @@ elif menu == "📋 Solicitar Servicio (Cliente)":
                         st.markdown(f"### {tec['nombre']} - *{tec['oficio']}*")
                         st.write(f"🆔 **Cédula Verificada:** {tec['cedula']} | 📍 **Municipio:** {tec['direccion']}")
                         st.write(f"💼 **Experiencia:** {tec['experiencia']}")
-                        st.write("🔒 *Contacto directo bloqueado por seguridad de la plataforma.*")
+                        st.write("🔒 *Contacto directo bloqueado por seguridad.*")
                         
                         if st.button(f"Seleccionar este Perfil", key=f"sel_{i}"):
-                            st.session_state.tecnico_elegido_actual = tec['nombre']
-                            st.success(f"¡Has seleccionado a {tec['nombre']}! Ve al panel de pagos o avisa al Administrador para formalizar el contrato de servicio.")
+                            st.success(f"¡Has seleccionado a {tec['nombre']}! Comunícate con el Administrador o ve al módulo de pago para formalizar la adjudicación del contrato.")
                 st.markdown("---")
-        else:
-            st.info("No hay técnicos registrados todavía en el sistema.")
 
 # ==========================================
 # MÓDULO 4: PANEL DE ADJUDICACIÓN (ADMIN)
 # ==========================================
 elif menu == "🔒 Panel de Adjudicación (Administrador)":
     st.title("🔒 Panel de Control del Administrador")
-    st.markdown("Área exclusiva para la gerencia. Aquí se adjudican los contratos, se valida el cumplimiento de estándares de calidad y se autorizan los pagos a técnicos.")
+    st.markdown("Área exclusiva para la gerencia. Aquí se adjudican los contratos bajo responsabilidad y estándares de calidad.")
     
     admin_clave = st.text_input("Clave de Acceso Administrador", type="password")
     
-    if admin_clave == "admin1234":  # Clave de seguridad del prototipo
+    if admin_clave == "admin1234":
         st.success("Acceso Autorizado como Administrador.")
         
-        if 'solicitudes' in st.session_state and st.session_state.solicitudes:
+        if st.session_state.solicitudes:
             st.subheader("Listado de Solicitudes y Adjudicación de Contratos")
             for idx, sol in enumerate(st.session_state.solicitudes):
                 with st.expander(f"Solicitud #{sol['id']} - Cliente: {sol['cliente']} ({sol['municipio']})"):
@@ -202,12 +237,10 @@ elif menu == "🔒 Panel de Adjudicación (Administrador)":
                     if st.button(f"Guardar Estado #{sol['id']}", key=f"btn_est_{idx}"):
                         sol['estado'] = nuevo_estado
                         st.success("¡Estado de contrato actualizado correctamente!")
-        else:
-            st.info("No hay solicitudes registradas para gestionar.")
-            
+        
         st.markdown("---")
         st.subheader("Cálculo y Liquidación de Pagos a Técnicos")
-        st.markdown("El administrador retiene el 10% por gestión de plataforma y liquida el saldo restante al técnico ejecutor una vez validado el 50% inicial y el 50% final.")
+        st.markdown("El administrador retiene el **10%** por gestión de plataforma y liquida el **90%** restante al técnico ejecutor.")
         monto_contrato = st.number_input("Monto Total del Contrato en USD ($)", min_value=10.0, value=50.0)
         comision_admin = monto_contrato * 0.10
         pago_tecnico = monto_contrato * 0.90
@@ -221,10 +254,10 @@ elif menu == "🔒 Panel de Adjudicación (Administrador)":
 # MÓDULO 5: PASARELA DE PAGO & CONTRATO (50% / 50%)
 # ==========================================
 elif menu == "💳 Pasarela de Pago & Contrato (50% / 50%)":
-    st.title("💳 Pasarela de Pagos Segura (Esquema 50% / 50%)")
-    st.markdown("Todo pago se realiza **únicamente** a través de las cuentas oficiales centralizadas del Administrador. Ningún pago debe entregarse de forma directa al técnico.")
+    st.title("💳 Pasarela de Pagos Centralizada (Esquema 50% / 50%)")
+    st.markdown("Todo pago se realiza **únicamente** a través de las cuentas oficiales del Administrador.")
     
-    # Cuadro informativo de cuentas oficiales del Administrador
+    # Datos Únicos de Pago Móvil del Admin
     st.info(f"""
     **DATOS OFICIALES ÚNICOS PARA PAGO MÓVIL:**
     * **Banco:** {ADMIN_PAGO_MOVIL['banco']}
@@ -247,10 +280,9 @@ elif menu == "💳 Pasarela de Pago & Contrato (50% / 50%)":
     
     if st.button("Reportar Transacción al Administrador"):
         if ref_pago:
-            st.success("¡Pago reportado con éxito! El administrador verificará la referencia bancaria para validar la continuidad del contrato y los estándares de seguridad.")
+            st.success("¡Pago reportado con éxito! El administrador verificará la transacción para validar el contrato.")
             
-            # Mensaje automatizado hacia el WhatsApp del administrador
-            msg_w = f"Hola Carlos Pacheco, reporto pago de {tipo_pago_etapa} por ${monto_ref} ({metodo}). Ref: {ref_pago}. Tasa aplicada: {TASA_DOLAR}."
-            st.markdown(f'<a href="{generar_link_whatsapp(msg_w)}" target="_blank"><button style="background-color:#25D366; color:white; padding:10px 20px; border:none; border-radius:5px; font-weight:bold; cursor:pointer;">📱 Notificar Comprobante al Administrador por WhatsApp</button></a>', unsafe_allow_html=True)
+            msg_pago = f"Hola Carlos Pacheco, reporto pago de {tipo_pago_etapa} por ${monto_ref} ({metodo}). Ref: {ref_pago}. Tasa aplicada: {TASA_DOLAR}."
+            st.markdown(f'<a href="{generar_link_whatsapp(msg_pago)}" target="_blank"><button style="background-color:#25D366; color:white; padding:10px 20px; border:none; border-radius:5px; font-weight:bold; cursor:pointer;">📱 Notificar Comprobante al Administrador por WhatsApp</button></a>', unsafe_allow_html=True)
         else:
             st.error("Por favor ingrese el número de referencia del pago.")
