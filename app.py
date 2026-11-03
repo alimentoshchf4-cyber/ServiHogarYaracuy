@@ -47,6 +47,10 @@ if 'catalogo_exito' not in st.session_state:
         }
     ]
 
+# Buzón de sugerencias global en la memoria de la app
+if 'buzon_sugerencias' not in st.session_state:
+    st.session_state.buzon_sugerencias = []
+
 # Datos Únicos de Pago del Administrador
 ADMIN_PAGO_MOVIL = {
     "banco": "Banco de Venezuela (0102)",
@@ -87,7 +91,8 @@ menu = st.sidebar.selectbox(
         "👤 Registro de Técnicos (Perfiles)", 
         "📋 Solicitar Servicio & Cotización PDF", 
         "🔒 Panel de Adjudicación (Administrador)",
-        "💳 Pasarela de Pago & Contrato (50% / 50%)"
+        "💳 Pasarela de Pago & Contrato (50% / 50%)",
+        "📬 Buzón de Sugerencias"
     ]
 )
 
@@ -95,7 +100,6 @@ menu = st.sidebar.selectbox(
 # MÓDULO 1: INICIO Y CATÁLOGO DE ÉXITO (Neuromarketing + Logos)
 # ==========================================
 if menu == "🌟 Inicio y Catálogo de Éxito":
-    # Layout de 3 columnas para colocar los logos a los lados y el título en el centro
     col_logo_izq, col_titulo, col_logo_der = st.columns([1, 4, 1])
     
     with col_logo_izq:
@@ -105,8 +109,8 @@ if menu == "🌟 Inicio y Catálogo de Éxito":
             st.write("🛡️ [Logo 1]")
             
     with col_titulo:
-        st.markdown("<h1 style='text-align: center; color: #004080; font-size: 28px;'>🏡 Tu Hogar en Yaracuy Merece Paz y Confianza Absoluta</h1>", unsafe_allow_html=True)
-        st.markdown("<h3 style='text-align: center; color: #555; font-size: 16px;'>Recupera la tranquilidad con expertos verificados y garantizados por contrato.</h3>", unsafe_allow_html=True)
+        st.markdown("<h1 style='text-align: center; color: #004080; font-size: 26px;'>🏡 Tu Hogar en Yaracuy Merece Paz y Confianza Absoluta</h1>", unsafe_allow_html=True)
+        st.markdown("<h3 style='text-align: center; color: #555; font-size: 15px;'>Recupera la tranquilidad con expertos verificados y garantizados por contrato.</h3>", unsafe_allow_html=True)
         
     with col_logo_der:
         try:
@@ -334,11 +338,19 @@ elif menu == "🔒 Panel de Adjudicación (Administrador)":
         st.write(f"🔹 **Retención plataforma (10%):** ${comision_admin:.2f} (Bs. {comision_admin * TASA_DOLAR:.2f})")
         st.write(f"🔹 **Monto a liquidar al técnico (90%):** ${pago_tecnico:.2f} (Bs. {pago_tecnico * TASA_DOLAR:.2f})")
         
+        st.markdown("---")
+        st.subheader("📬 Buzón de Sugerencias Recibidas (Admin)")
+        if st.session_state.buzon_sugerencias:
+            for sug in st.session_state.buzon_sugerencias:
+                st.info(f"**Cliente:** {sug['cliente']} | **Fecha:** {sug['fecha']}\n\n\"{sug['mensaje']}\"")
+        else:
+            st.write("Aún no hay sugerencias registradas en el buzón.")
+        
     elif admin_clave != "":
         st.error("Clave de administrador incorrecta.")
 
 # ==========================================
-# MÓDULO 5: PASARELA DE PAGO & CONTRATO (50% / 50%)
+# MÓDULO 5: PASARELA DE PAGO & CONTRATO (50% / 50%) + AGRADECIMIENTO 100%
 # ==========================================
 elif menu == "💳 Pasarela de Pago & Contrato (50% / 50%)":
     st.title("💳 Pasarela de Pagos Centralizada (Esquema 50% / 50%)")
@@ -353,7 +365,7 @@ elif menu == "💳 Pasarela de Pago & Contrato (50% / 50%)":
     * **Tasa del Dólar Actual (Fija 24h):** Bs. {TASA_DOLAR:.2f}
     """)
     
-    tipo_pago_etapa = st.selectbox("Seleccione Etapa del Contrato", ["1. Pago Inicial (50%)", "2. Pago Final / Culminación (50%)"])
+    tipo_pago_etapa = st.selectbox("Seleccione Etapa del Contrato", ["1. Pago Inicial (50%)", "2. Pago Final / Culminación (100% Total Completado)"])
     metodo = st.selectbox("Método de Pago", ["Pago Móvil (Banco de Venezuela)", "Zinli", "Wally Tech"])
     
     monto_ref = st.number_input("Monto en Divisas (USD)", min_value=5.0, value=25.0, step=5.0)
@@ -368,7 +380,43 @@ elif menu == "💳 Pasarela de Pago & Contrato (50% / 50%)":
         if ref_pago:
             st.success("¡Pago reportado con éxito! El administrador verificará la referencia.")
             
+            # Si el cliente paga la segunda etapa (completando el 100% del servicio)
+            if "2." in tipo_pago_etapa or "100%" in tipo_pago_etapa:
+                st.balloons()  # Animación de celebración instantánea
+                st.markdown("""
+                <div style="background-color: #d4edda; padding: 20px; border-radius: 10px; border: 1px solid #c3e6cb; color: #155724; text-align: center;">
+                    <h2>🎉 ¡Muchísimas Gracias por Preferirnos! 🎉</h2>
+                    <p style="font-size: 16px;">Hemos registrado el pago total del 100% de su servicio con éxito. Para la familia de <strong>YaracuyServicios</strong>, su confianza es nuestro mayor compromiso en el Estado Yaracuy.</p>
+                    <hr style="border-top: 1px solid #c3e6cb;">
+                    <p style="font-size: 14px;"><strong>📬 ¡Tu opinión nos importa!</strong> Te invitamos a dejarnos tus comentarios y sugerencias en nuestro <strong>Buzón de Sugerencias</strong> (en la barra lateral) para seguir mejorando cada día.</p>
+                </div>
+                """, unsafe_allow_html=True)
+            
             msg_pago = f"Hola Carlos Pacheco, reporto pago de {tipo_pago_etapa} por ${monto_ref} ({metodo}). Ref: {ref_pago}. Tasa aplicada: {TASA_DOLAR}."
             st.markdown(f'<a href="{generar_link_whatsapp(msg_pago)}" target="_blank"><button style="background-color:#25D366; color:white; padding:10px 20px; border:none; border-radius:5px; font-weight:bold; cursor:pointer;">📱 Notificar Comprobante al Administrador por WhatsApp</button></a>', unsafe_allow_html=True)
         else:
             st.error("Por favor ingrese el número de referencia del pago.")
+
+# ==========================================
+# MÓDULO 6: BUZÓN DE SUGERENCIAS
+# ==========================================
+elif menu == "📬 Buzón de Sugerencias":
+    st.title("📬 Buzón de Sugerencias y Comentarios")
+    st.markdown("Tu opinión es el motor principal para mantener los más altos estándares de calidad, rapidez y seguridad en YaracuyServicios.")
+    
+    with st.form("form_buzon"):
+        nombre_sug = st.text_input("Tu Nombre (Opcional)")
+        mensaje_sug = st.text_area("Escribe aquí tus sugerencias, comentarios o propuestas de mejora")
+        
+        btn_enviar_sug = st.form_submit_button("Enviar Sugerencia")
+        
+        if btn_enviar_sug:
+            if mensaje_sug:
+                st.session_state.buzon_sugerencias.append({
+                    "cliente": nombre_sug if nombre_sug else "Anónimo",
+                    "mensaje": mensaje_sug,
+                    "fecha": str(hoy)
+                })
+                st.success("¡Muchas gracias! Tu sugerencia ha sido recibida con éxito en nuestro buzón gerencial.")
+            else:
+                st.warning("Por favor escribe un mensaje antes de enviar.")
